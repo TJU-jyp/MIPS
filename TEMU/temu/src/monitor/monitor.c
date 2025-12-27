@@ -1,4 +1,5 @@
 #include "temu.h"
+#include "helper.h"
 
 #define ENTRY_START 0x80000000
 
@@ -9,10 +10,35 @@ void init_wp_pool();
 void init_ddr3();
 
 FILE *log_fp = NULL;
-
+FILE *trace_fp = NULL; //定义 trace 文件指针
 static void init_log() {
 	log_fp = fopen("log.txt", "w");
 	Assert(log_fp, "Can not open 'log.txt'");
+}
+
+void init_trace() {
+	trace_fp = fopen("trace.txt", "w");
+	Assert(trace_fp, "Can not open 'golden_trace.txt'");
+
+	// 写入trace头部信息
+	fprintf(trace_fp, "# TEMU指令仿真输出文件(Golden Trace)\n");
+	fprintf(trace_fp, "# 格式:PC值\t寄存器编号\t待写入寄存器的值\n");
+	fprintf(trace_fp, "# 说明:不包含分支指令和Store指令\n");
+	fflush(trace_fp);
+}
+
+void close_trace() {
+	if(trace_fp) {
+		fclose(trace_fp);
+		trace_fp = NULL;
+	}
+}
+
+void record_trace(uint32_t pc, int reg_no, uint32_t reg_val) {
+    if (trace_fp != NULL) {
+        fprintf(trace_fp, "%08x\t%02x\t%08x\n", pc, reg_no, reg_val);
+        fflush(trace_fp);  // 确保每次写入都立即刷新到文件
+    }
 }
 
 static void welcome() {
